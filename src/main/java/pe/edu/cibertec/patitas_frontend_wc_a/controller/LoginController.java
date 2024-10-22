@@ -15,10 +15,11 @@ import reactor.core.publisher.Mono;
 
 @Controller
 @RequestMapping("/login")
+@CrossOrigin(origins = "http://localhost:5173")
 public class LoginController {
 
     @Autowired
-    WebClient webClientAutenticacion;
+  v  WebClient webClientAutenticacion;
 
     @Autowired
     AutenticacionClient autenticacionClient;
@@ -114,49 +115,29 @@ public class LoginController {
         }
 
         try {
-
             // preparar request
             LoginRequestDTO loginRequestDTO = new LoginRequestDTO(tipoDocumento, numeroDocumento, password);
 
             // consumir servicio con Feign Client
-            ResponseEntity<LoginResponseDTO> responseEntity = autenticacionClient.login(loginRequestDTO);
+            LoginResponseDTO loginResponseDTO = autenticacionClient.login(loginRequestDTO);
 
             // validar respuesta del servicio
-            if (responseEntity.getStatusCode().is2xxSuccessful()) {
-
-                // recuperar response
-                LoginResponseDTO loginResponseDTO = responseEntity.getBody();
-
-                if (loginResponseDTO.codigo().equals("00")){
-
-                    LoginModel loginModel = new LoginModel("00", "", loginResponseDTO.nombreUsuario(), loginRequestDTO.tipoDocumento(), loginRequestDTO.numeroDocumento());
-                    model.addAttribute("loginModel", loginModel);
-                    return "principal";
-
-                } else {
-
-                    LoginModel loginModel = new LoginModel("02", "Error: Autenticación fallida", "", "", "");
-                    model.addAttribute("loginModel", loginModel);
-                    return "inicio";
-
-                }
-
+            if (loginResponseDTO.codigo().equals("00")) {
+                LoginModel loginModel = new LoginModel("00", "", loginResponseDTO.nombreUsuario(), loginRequestDTO.tipoDocumento(), loginRequestDTO.numeroDocumento());
+                model.addAttribute("loginModel", loginModel);
+                return "principal";
             } else {
-
-                LoginModel loginModel = new LoginModel("99", "Error: Ocurrió un problema http", "", "", "");
+                LoginModel loginModel = new LoginModel("02", "Error: Autenticación fallida", "", "", "");
                 model.addAttribute("loginModel", loginModel);
                 return "inicio";
-
             }
-
-        } catch(Exception e) {
-
-            LoginModel loginModel = new LoginModel("99", "Error: Ocurrió un problema en la autenticación", "", "", "");
+        } catch (Exception e) {
+            LoginModel loginModel = new LoginModel("99", "Error: Ocurrió un problema en la autenticación: " + e.getMessage(), "", "", "");
             model.addAttribute("loginModel", loginModel);
             System.out.println(e.getMessage());
             return "inicio";
-
         }
     }
+
 
 }

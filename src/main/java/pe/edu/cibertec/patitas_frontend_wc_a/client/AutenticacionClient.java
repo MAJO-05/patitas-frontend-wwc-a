@@ -6,10 +6,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import pe.edu.cibertec.patitas_frontend_wc_a.dto.LoginRequestDTO;
 import pe.edu.cibertec.patitas_frontend_wc_a.dto.LoginResponseDTO;
+import pe.edu.cibertec.patitas_frontend_wc_a.dto.LogoutRequestDTO;
 
-@FeignClient(name = "autenticacion", url = "http://localhost:8081/autenticacion")
+
+@FeignClient(name = "autenticacionClient", url = "http://localhost:8081")
 public interface AutenticacionClient {
-
-    @PostMapping("/login")
-    ResponseEntity<LoginResponseDTO> login(@RequestBody LoginRequestDTO loginRequestDTO);
+    @PostMapping("/autenticacion/login")
+    LoginResponseDTO login(@RequestBody LoginRequestDTO loginRequestDTO);
 }
+
