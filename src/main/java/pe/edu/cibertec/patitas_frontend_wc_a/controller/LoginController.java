@@ -1,6 +1,7 @@
 package pe.edu.cibertec.patitas_frontend_wc_a.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -98,46 +99,40 @@ public class LoginController {
         }
     }
     @PostMapping("/autenticar-feign")
-    public String autenticarFeign(@RequestParam("tipoDocumento") String tipoDocumento,
-                                  @RequestParam("numeroDocumento") String numeroDocumento,
-                                  @RequestParam("password") String password,
-                                  Model model) {
+    public ResponseEntity<LoginModel> autenticarFeign(@RequestBody LoginRequestDTO loginRequestDTO) {
+        String tipoDocumento = loginRequestDTO.tipoDocumento();
+        String numeroDocumento = loginRequestDTO.numeroDocumento();
+        String password = loginRequestDTO.password();
 
         System.out.println("Consuming with Feign Client!!!");
-        // Validar campos de entrada
-        if (tipoDocumento == null || tipoDocumento.trim().length() == 0 ||
-                numeroDocumento == null || numeroDocumento.trim().length() == 0 ||
-                password == null || password.trim().length() == 0) {
 
+        // Validar campos de entrada
+        if (tipoDocumento == null || tipoDocumento.trim().isEmpty() ||
+                numeroDocumento == null || numeroDocumento.trim().isEmpty() ||
+                password == null || password.trim().isEmpty()) {
             LoginModel loginModel = new LoginModel("01", "Error: Debe completar correctamente sus credenciales", "", "", "");
-            model.addAttribute("loginModel", loginModel);
-            return "inicio";
+            return ResponseEntity.badRequest().body(loginModel); // Retorna un BadRequest
         }
 
         try {
-            // preparar request
-            LoginRequestDTO loginRequestDTO = new LoginRequestDTO(tipoDocumento, numeroDocumento, password);
-
             // consumir servicio con Feign Client
             LoginResponseDTO loginResponseDTO = autenticacionClient.login(loginRequestDTO);
 
             // validar respuesta del servicio
-            if (loginResponseDTO.codigo().equals("00")) {
+            if ("00".equals(loginResponseDTO.codigo())) {
                 LoginModel loginModel = new LoginModel("00", "", loginResponseDTO.nombreUsuario(), loginRequestDTO.tipoDocumento(), loginRequestDTO.numeroDocumento());
-                model.addAttribute("loginModel", loginModel);
-                return "principal";
+                return ResponseEntity.ok(loginModel); // Retorna 200 OK con el objeto
             } else {
                 LoginModel loginModel = new LoginModel("02", "Error: Autenticación fallida", "", "", "");
-                model.addAttribute("loginModel", loginModel);
-                return "inicio";
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(loginModel); // Retorna 401 Unauthorized
             }
         } catch (Exception e) {
             LoginModel loginModel = new LoginModel("99", "Error: Ocurrió un problema en la autenticación: " + e.getMessage(), "", "", "");
-            model.addAttribute("loginModel", loginModel);
-            System.out.println(e.getMessage());
-            return "inicio";
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(loginModel); // Retorna 500 Internal Server Error
         }
     }
+
+
 
 
 }
